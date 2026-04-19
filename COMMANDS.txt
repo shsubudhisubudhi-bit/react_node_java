@@ -1,0 +1,330 @@
+============================================================
+ CLIENT DEMO COMMANDS  -  PowerShell only
+ Copy-paste each block and run. Read the comment above it
+ to know what it is proving.
+============================================================
+
+# ------------------------------------------------------------
+# 0. HEALTH CHECK  (Phase 1 - full chain React -> Node -> Java)
+# ------------------------------------------------------------
+Invoke-RestMethod http://localhost:3000/health
+
+
+
+# ============================================================
+#  READ OPERATIONS  (Phase 1)
+# ============================================================
+
+# 1. Sare users dekho
+Invoke-RestMethod http://localhost:3000/api/users
+
+# 2. Ek user by id (id = 1)
+Invoke-RestMethod http://localhost:3000/api/users/1
+
+# 3. User jo exist nahi karta  -> 404 dikhana hai
+try { Invoke-RestMethod http://localhost:3000/api/users/999 }
+catch { Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (404 expected)" }
+
+# 4. Sare tasks
+Invoke-RestMethod http://localhost:3000/api/tasks
+
+# 5. Tasks filter by status
+Invoke-RestMethod "http://localhost:3000/api/tasks?status=pending"
+Invoke-RestMethod "http://localhost:3000/api/tasks?status=in-progress"
+Invoke-RestMethod "http://localhost:3000/api/tasks?status=completed"
+
+# 6. Tasks filter by user
+Invoke-RestMethod "http://localhost:3000/api/tasks?userId=2"
+
+# 7. Stats (total users, task counts by status)
+Invoke-RestMethod http://localhost:3000/api/stats
+
+
+
+# ============================================================
+#  CREATE USER  (Phase 2.1)
+# ============================================================
+
+# 8. Naya user banao - should return HTTP 201
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/users `
+  -ContentType 'application/json' `
+  -Body '{"name":"Demo User","email":"demo@client.com","role":"developer"}'
+
+# 9. Verify naya user list me aa gaya
+Invoke-RestMethod http://localhost:3000/api/users
+
+
+# --- Validation demo (ye sab fail hone chahiye) ---
+
+# 10. Missing fields -> 400
+try {
+  Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/users `
+    -ContentType 'application/json' -Body '{"name":"X"}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (400 expected)"
+  $_.ErrorDetails.Message
+}
+
+# 11. Invalid email -> 400
+try {
+  Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/users `
+    -ContentType 'application/json' `
+    -Body '{"name":"X","email":"not-an-email","role":"dev"}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (400 expected)"
+  $_.ErrorDetails.Message
+}
+
+
+
+# ============================================================
+#  CREATE TASK (Assign to user)  (Phase 2.2)
+# ============================================================
+
+# 12. User id 1 ko ek naya task assign karo
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/tasks `
+  -ContentType 'application/json' `
+  -Body '{"title":"Prepare demo","status":"pending","userId":1}'
+
+# 13. User id 2 ko ek task assign karo
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/tasks `
+  -ContentType 'application/json' `
+  -Body '{"title":"Design login page","status":"in-progress","userId":2}'
+
+# 14. Kisi specific user (e.g. id 7) ko assign karna
+#     Pehle confirm karo user 7 exist karta hai
+Invoke-RestMethod http://localhost:3000/api/users/7
+
+# 15. Ab user 7 ko task assign karo
+Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/tasks `
+  -ContentType 'application/json' `
+  -Body '{"title":"Client review","status":"pending","userId":7}'
+
+# 16. Verify user 7 ke tasks dikh rahe hain
+Invoke-RestMethod "http://localhost:3000/api/tasks?userId=7"
+
+
+# --- Validation demo ---
+
+# 17. Invalid status -> 400
+try {
+  Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/tasks `
+    -ContentType 'application/json' `
+    -Body '{"title":"X","status":"wrong","userId":1}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (400 expected)"
+  $_.ErrorDetails.Message
+}
+
+# 18. Unknown userId -> 400
+try {
+  Invoke-RestMethod -Method POST -Uri http://localhost:3000/api/tasks `
+    -ContentType 'application/json' `
+    -Body '{"title":"X","status":"pending","userId":999}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (400 expected)"
+  $_.ErrorDetails.Message
+}
+
+
+
+# ============================================================
+#  UPDATE TASK  (Phase 2.3 - partial update / reassign)
+# ============================================================
+
+# 19. Task id 1 ka sirf status badlo (title/userId same rahega)
+Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/1 `
+  -ContentType 'application/json' `
+  -Body '{"status":"completed"}'
+
+# 20. Task id 1 ka sirf title badlo
+Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/1 `
+  -ContentType 'application/json' `
+  -Body '{"title":"New cleaned-up title"}'
+
+# 21. Task id 1 ko dusre user ko transfer karo (reassign)
+Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/1 `
+  -ContentType 'application/json' `
+  -Body '{"userId":3}'
+
+# 22. Ek saath status + assignee dono update
+Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/1 `
+  -ContentType 'application/json' `
+  -Body '{"status":"in-progress","userId":2}'
+
+# 23. Verify update laga ya nahi
+Invoke-RestMethod http://localhost:3000/api/tasks
+
+
+# --- Error demos ---
+
+# 24. Non-existent task -> 404
+try {
+  Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/9999 `
+    -ContentType 'application/json' -Body '{"status":"completed"}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (404 expected)"
+  $_.ErrorDetails.Message
+}
+
+# 25. Invalid status on update -> 400
+try {
+  Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/1 `
+    -ContentType 'application/json' -Body '{"status":"wrong"}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (400 expected)"
+  $_.ErrorDetails.Message
+}
+
+# 26. Reassign to unknown user -> 400
+try {
+  Invoke-RestMethod -Method PUT -Uri http://localhost:3000/api/tasks/1 `
+    -ContentType 'application/json' -Body '{"userId":999}'
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (400 expected)"
+  $_.ErrorDetails.Message
+}
+
+
+
+# ============================================================
+#  LOGGING  (Phase 2.4)
+# ============================================================
+# Ye screen par output nahi dega.
+# Java backend jis terminal me chal raha hai wahan dekho.
+# Har HTTP request pe ek line aati hai, jaise:
+#   16:36:29.712 INFO  access - GET /api/users -> 200 (8 ms) ip=...
+#   16:36:30.067 INFO  DataStore - Created user id=4 email=...
+#   16:36:30.069 INFO  access - POST /api/users -> 201 (102 ms) ip=...
+#   16:36:30.838 WARN  access - PUT /api/tasks/9999 -> 404 (2 ms) ip=...
+
+
+
+# ============================================================
+#  ENHANCED HEALTH + PERSISTENCE  (Phase 3 bonus)
+# ============================================================
+
+# 27. Detailed health (uptime, memory, data counts, JVM info)
+Invoke-RestMethod http://localhost:8080/health/detailed
+
+# 28. Persistence file dekh lo - har create/update pe update hoti hai
+Get-Content .\java-backend\data\data.json
+
+
+
+# ============================================================
+#  METRICS  (Phase 5 bonus)
+# ============================================================
+
+# 29. Live request counters
+Invoke-RestMethod http://localhost:8080/api/metrics
+
+
+
+# ============================================================
+#  RATE LIMIT PROOF  (Phase 5 bonus)
+# ============================================================
+
+# 30. 135 rapid-fire requests bhejo
+#     Pehle 120 pass (200), baki 15 block (429)
+$r = @{}
+1..135 | ForEach-Object {
+  try { $c = [int](Invoke-WebRequest -Uri "http://localhost:8080/api/users" -UseBasicParsing).StatusCode }
+  catch { $c = [int]$_.Exception.Response.StatusCode }
+  $r[$c] = 1 + ($r[$c] -as [int])
+}
+$r
+# Expected:
+#   Name Value
+#   ---- -----
+#    200   120
+#    429    15
+
+
+
+# ============================================================
+#  FULL AUTOMATED TEST  (one-shot proof)
+# ============================================================
+
+# 31. Saare 40 tests ek sath chalao
+powershell -ExecutionPolicy Bypass -File .\test-suite.ps1
+# Expected last lines:
+#   PASS: 40
+#   FAIL: 0
+
+
+
+# ============================================================
+#  UI VISUAL PROOF
+# ============================================================
+# Browser me kholo: http://localhost:5173/
+#
+# Ye cheezein dikhni chahiye:
+# - Upar green banner: "Java backend is running"
+# - Stats tiles: users total + pending/in-progress/completed task counts
+# - Users panel: sare users listed
+# - Tasks panel: sare tasks listed
+# - Filter buttons: All / Pending / In Progress / Completed
+# - Kisi user pe click karo -> uske tasks filter ho jayenge
+# - Refresh button: sab reload kar deta hai
+#
+# Jab tu POST/PUT commands chalaye (upar ki), phir UI me Refresh dabaye
+# to naye users/tasks turant list me aate hain - yahi UI proof hai.
+
+
+
+# ============================================================
+#  API KEY AUTHENTICATION  (Phase 5 bonus - OFF by default)
+# ============================================================
+# Default me disabled hai taaki regular demo / test-suite chalti rahe.
+# Demo ke waqt on karne ke liye:
+#   1) java-backend\src\main\resources\application.properties me:
+#        auth.enabled=true
+#   2) Java backend restart karo.
+#
+# Do keys pre-configured hain (same file me):
+#   auth.api-keys=demo-key-123,client-key-456
+#
+# 32. Without key  -> 401
+try { Invoke-RestMethod http://localhost:8080/api/users -ErrorAction Stop }
+catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (401 expected)"
+  $_.ErrorDetails.Message
+}
+
+# 33. Wrong key -> 401
+try {
+  Invoke-RestMethod http://localhost:8080/api/users `
+    -Headers @{'X-API-Key'='wrong-key'} -ErrorAction Stop
+} catch {
+  Write-Host "Status: $($_.Exception.Response.StatusCode.value__)  (401 expected)"
+  $_.ErrorDetails.Message
+}
+
+# 34. Correct key -> 200
+Invoke-RestMethod http://localhost:8080/api/users `
+  -Headers @{'X-API-Key'='demo-key-123'}
+
+# 35. Correct key for POST
+Invoke-RestMethod -Method POST -Uri http://localhost:8080/api/users `
+  -Headers @{'X-API-Key'='demo-key-123'} `
+  -ContentType 'application/json' `
+  -Body '{"name":"Secured User","email":"sec@test.com","role":"dev"}'
+
+# 36. Health endpoint is public (works even without key)
+Invoke-RestMethod http://localhost:8080/health
+
+# Demo done? auth.enabled=false wapas set karke restart kar do,
+# warna test-suite.ps1 fail ho jayega.
+
+
+
+# ============================================================
+#  IF RATE LIMIT HIT DURING DEMO
+# ============================================================
+# Agar 429 aane lage aur demo disturb ho rahi hai,
+# to 60 second ruko aur dobara chalao.
+# Ya permanent off karne ke liye:
+#   java-backend\src\main\resources\application.properties me badlo:
+#     ratelimit.enabled=false
+#   phir Java backend restart kar do.

@@ -1,0 +1,374 @@
+{
+  "info": {
+    "name": "Java Developer Test - Full API",
+    "description": "Import this file in Postman (Import → upload). Folders match the test phases. {{node}} = gateway (3000), {{java}} = Spring Boot (8080). For 400 responses with full validation details, use requests that hit {{java}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "java", "value": "http://localhost:8080" },
+    { "key": "node", "value": "http://localhost:3000" },
+    { "key": "apiKey", "value": "demo-key-123" }
+  ],
+  "item": [
+    {
+      "name": "PHASE 1 - Read Endpoints",
+      "item": [
+        {
+          "name": "Health (Node chain - proves React -> Node -> Java)",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/health"
+          }
+        },
+        {
+          "name": "Health (Java direct)",
+          "request": {
+            "method": "GET",
+            "url": "{{java}}/health"
+          }
+        },
+        {
+          "name": "Get all users",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/users"
+          }
+        },
+        {
+          "name": "Get user by id = 1",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/users/1"
+          }
+        },
+        {
+          "name": "Get user 999 (expect 404)",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/users/999"
+          }
+        },
+        {
+          "name": "Get all tasks",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/tasks"
+          }
+        },
+        {
+          "name": "Tasks - filter by status=pending",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/tasks?status=pending"
+          }
+        },
+        {
+          "name": "Tasks - filter by status=in-progress",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/tasks?status=in-progress"
+          }
+        },
+        {
+          "name": "Tasks - filter by status=completed",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/tasks?status=completed"
+          }
+        },
+        {
+          "name": "Tasks - filter by userId=2",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/tasks?userId=2"
+          }
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{node}}/api/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2.1 - Create User",
+      "item": [
+        {
+          "name": "Create user (expect 201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"email\": \"demo@client.com\",\n  \"role\": \"developer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Missing fields (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bob\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Invalid email (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Eve\",\n  \"email\": \"not-an-email\",\n  \"role\": \"qa\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Empty body (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2.2 - Create / Assign Task",
+      "item": [
+        {
+          "name": "Assign task to user 1 (expect 201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Prepare demo\",\n  \"status\": \"pending\",\n  \"userId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign task to user 2 (design work)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Design login page\",\n  \"status\": \"in-progress\",\n  \"userId\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Invalid status (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"X\",\n  \"status\": \"wrong\",\n  \"userId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Unknown userId (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ghost task\",\n  \"status\": \"pending\",\n  \"userId\": 999\n}"
+            }
+          }
+        },
+        {
+          "name": "Missing title (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending\",\n  \"userId\": 1\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 2.3 - Update Task (PUT)",
+      "item": [
+        {
+          "name": "Update only status (partial)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update only title (partial)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New cleaned title\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reassign task to different user",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "Update status + userId together",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in-progress\",\n  \"userId\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Non-existent task (expect 404)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/9999",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Invalid status on update (expect 400)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"bogus\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reassign to unknown user (expect 400)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{node}}/api/tasks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 999\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 3 - Persistence + Detailed Health (bonus)",
+      "item": [
+        {
+          "name": "Detailed health (uptime, memory, data counts)",
+          "request": {
+            "method": "GET",
+            "url": "{{java}}/health/detailed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PHASE 5 - Metrics + Auth (bonus)",
+      "item": [
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "url": "{{java}}/api/metrics"
+          }
+        },
+        {
+          "name": "AUTH OFF - no key works (default state)",
+          "request": {
+            "method": "GET",
+            "url": "{{java}}/api/users"
+          }
+        },
+        {
+          "name": "AUTH ON - without key (expect 401)",
+          "description": "First set auth.enabled=true in application.properties and restart Java. Then this returns 401.",
+          "request": {
+            "method": "GET",
+            "url": "{{java}}/api/users"
+          }
+        },
+        {
+          "name": "AUTH ON - with correct key (expect 200)",
+          "description": "Requires auth.enabled=true. Uses X-API-Key header.",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+            "url": "{{java}}/api/users"
+          }
+        },
+        {
+          "name": "AUTH ON - wrong key (expect 401)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-API-Key", "value": "wrong-key" }],
+            "url": "{{java}}/api/users"
+          }
+        },
+        {
+          "name": "AUTH ON - POST user with key (expect 201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": "{{java}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Secured User\",\n  \"email\": \"sec@test.com\",\n  \"role\": \"dev\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

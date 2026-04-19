@@ -1,0 +1,41 @@
+services:
+  java:
+    build: ./java-backend
+    container_name: java-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - java-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 50s
+
+  node:
+    build: ./node-backend
+    container_name: node-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      GO_BACKEND_URL: http://java:8080
+      PORT: "3000"
+      NODE_ENV: production
+    depends_on:
+      java:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./react-frontend
+      args:
+        VITE_API_URL: http://localhost:3000
+    container_name: react-ui
+    ports:
+      - "5173:80"
+    depends_on:
+      - node
+
+volumes:
+  java-data:

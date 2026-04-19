@@ -1,0 +1,51 @@
+================================================================================
+  JAVA DEVELOPER TEST — QUICK START (Docker — recommended)
+================================================================================
+
+You only need:  Docker Desktop  (Windows / Mac / Linux)
+                 https://www.docker.com/products/docker-desktop/
+
+You do NOT need: Java, Maven, or Node.js installed on your PC for Docker mode.
+
+
+STEP 1 — Install Docker Desktop and START it (whale icon in tray should be green).
+
+
+STEP 2 — Unzip this project to a folder whose path has NO spaces (recommended).
+
+
+STEP 3 — Open a terminal IN THE PROJECT ROOT (same folder as "docker-compose.yml").
+
+        Windows — double-click:  docker-up.bat
+
+        OR type this command:
+
+            docker compose up --build -d
+
+        First run: building can take 5–15 minutes. Wait until it finishes.
+
+
+STEP 4 — Open in your browser:
+
+            http://localhost:5173
+
+        Health check (optional):
+
+            http://localhost:3000/health
+
+
+STEP 5 — To stop:
+
+            docker compose down
+
+        Windows — double-click:  docker-down.bat
+
+
+If something fails:
+  - Make sure Docker Desktop is running.
+  - Ports 8080, 3000, 5173 must be free (close other apps using them).
+  - Read DOCKER.md for more help.
+
+================================================================================
+  No Docker? Use README.md — run Java, Node, and React separately (needs JDK + Node).
+================================================================================
